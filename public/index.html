@@ -8,35 +8,127 @@
 
 <h1>Multiplayer Game</h1>
 
-<canvas id="game" width="600" height="400" style="border:1px solid black"></canvas>
+<div style="display:flex">
+
+    <canvas
+        id="game"
+        width="600"
+        height="400"
+        style="border:1px solid black">
+    </canvas>
+
+    <div
+        id="scoreboard"
+        style="
+            margin-left:20px;
+            min-width:150px;
+        ">
+        <h3>排行榜</h3>
+    </div>
+
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
+
 const socket = io();
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 let players = {};
-let myPos = { x: 100, y: 100 };
+let coin = {};
 
+let myPos = {
+    x: 100,
+    y: 100
+};
+
+
+// 玩家資料更新
 socket.on("playersUpdate", (data) => {
+
     players = data;
+
     draw();
 });
 
+
+// 金幣資料更新
+socket.on("coinUpdate", (data) => {
+
+    coin = data;
+
+    draw();
+});
+
+
 function draw() {
+
     ctx.clearRect(0, 0, 600, 400);
 
+    // 畫金幣
+    if (coin.x !== undefined) {
+
+        ctx.fillStyle = "gold";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            coin.x,
+            coin.y,
+            10,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+    }
+
+    // 畫玩家
     for (let id in players) {
+
         const p = players[id];
 
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 20, 20);
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            20,
+            20
+        );
+    }
+
+    updateScoreboard();
+}
+
+
+// 更新排行榜
+function updateScoreboard() {
+
+    const scoreboard =
+        document.getElementById("scoreboard");
+
+    scoreboard.innerHTML =
+        "<h3>排行榜</h3>";
+
+    let i = 1;
+
+    for (let id in players) {
+
+        scoreboard.innerHTML +=
+            `玩家${i}: ${players[id].score} 分<br>`;
+
+        i++;
     }
 }
 
+
+// WASD
 document.addEventListener("keydown", (e) => {
+
     const speed = 5;
 
     if (e.key === "w") myPos.y -= speed;
@@ -46,6 +138,7 @@ document.addEventListener("keydown", (e) => {
 
     socket.emit("move", myPos);
 });
+
 </script>
 
 </body>
